@@ -1,5 +1,6 @@
 import type { AgentAnalysis, CheckStatus, SecurityCheck } from "./agents/types";
 import { scoreToRiskLevel } from "./trustEngine";
+import { hashSeed } from "./hash";
 
 const SUSPICIOUS_PATTERNS = [
   /paypa[il1]/i,
@@ -37,15 +38,6 @@ function isSuspicious(domain: string): boolean {
 
 function isTrusted(domain: string): boolean {
   return TRUSTED_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`));
-}
-
-function hashSeed(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
 }
 
 function buildChecks(domain: string, trustScore: number): SecurityCheck[] {

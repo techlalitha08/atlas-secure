@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScanProgress } from "@/components/atlas/scan-progress";
+import { useScanSteps } from "@/lib/hooks/useScanSteps";
 import { cn } from "@/lib/utils";
 
 const scanSteps = [
@@ -29,23 +30,21 @@ const timelineData = [
 
 export default function VoiceAnalysisPage() {
   const [scanning, setScanning] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const { currentStep, start } = useScanSteps(scanSteps.length, {
+    intervalMs: 600,
+    completeDelayMs: 500,
+    onComplete: () => {
+      setScanning(false);
+      setResult(true);
+    },
+  });
 
   const startScan = () => {
     setScanning(true);
     setResult(false);
-    setCurrentStep(0);
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      setCurrentStep(step);
-      if (step >= scanSteps.length) {
-        clearInterval(interval);
-        setTimeout(() => { setScanning(false); setResult(true); }, 500);
-      }
-    }, 600);
+    start();
   };
 
   return (

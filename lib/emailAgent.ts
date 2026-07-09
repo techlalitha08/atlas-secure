@@ -1,5 +1,6 @@
 import type { AgentAnalysis, CheckStatus, SecurityCheck } from "./agents/types";
 import { scoreToRiskLevel } from "./trustEngine";
+import { hashSeed } from "./hash";
 
 const PHISHING_SENDER_PATTERNS = [
   /paypa[il1]/i,
@@ -40,15 +41,6 @@ function extractSubject(input: string): string {
     if (input.toLowerCase().includes(kw)) return kw;
   }
   return "Unknown subject";
-}
-
-function hashSeed(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
 }
 
 function isPhishingSender(email: string): boolean {

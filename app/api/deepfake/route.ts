@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runDeepfakeInference } from "@/lib/deepfake/inference";
+import { getUploadedFile, jsonError } from "@/lib/api/http";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file");
-
-    if (!file || typeof file === "string") {
+    const file = await getUploadedFile(request);
+    if (!file) {
       return NextResponse.json({ error: "Please upload an image file." }, { status: 400 });
     }
 
@@ -19,12 +18,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    console.error("Deepfake inference error:", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Deepfake inference failed.",
-      },
-      { status: 500 }
-    );
+    return jsonError(error, "Deepfake inference failed.");
   }
 }
