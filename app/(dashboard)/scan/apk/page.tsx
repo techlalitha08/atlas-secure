@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrustGauge } from "@/components/atlas/trust-gauge";
 import { ScanProgress } from "@/components/atlas/scan-progress";
 import { apkScanResult } from "@/data/mock-data";
+import { useScanSteps } from "@/lib/hooks/useScanSteps";
 import { cn } from "@/lib/utils";
 
 const scanSteps = [
@@ -23,24 +24,22 @@ const scanSteps = [
 
 export default function APKScannerPage() {
   const [scanning, setScanning] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<typeof apkScanResult | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const { currentStep, start } = useScanSteps(scanSteps.length, {
+    intervalMs: 600,
+    completeDelayMs: 500,
+    onComplete: () => {
+      setScanning(false);
+      setResult(apkScanResult);
+    },
+  });
 
   const startScan = useCallback(() => {
     setScanning(true);
     setResult(null);
-    setCurrentStep(0);
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      setCurrentStep(step);
-      if (step >= scanSteps.length) {
-        clearInterval(interval);
-        setTimeout(() => { setScanning(false); setResult(apkScanResult); }, 500);
-      }
-    }, 600);
-  }, []);
+    start();
+  }, [start]);
 
   return (
     <div>

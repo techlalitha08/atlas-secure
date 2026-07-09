@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScanProgress } from "@/components/atlas/scan-progress";
+import { useScanSteps } from "@/lib/hooks/useScanSteps";
 
 const scanSteps = [
   "Loading media file",
@@ -20,7 +21,6 @@ const scanSteps = [
 
 export default function DeepfakePage() {
   const [scanning, setScanning] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<{
     fakeProbability: number;
     realProbability: number;
@@ -32,6 +32,7 @@ export default function DeepfakePage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentStep, start, finish } = useScanSteps(scanSteps.length, { intervalMs: 700 });
 
   const startScan = async (file?: File | null) => {
     if (!file) return;
@@ -39,15 +40,11 @@ export default function DeepfakePage() {
     setScanning(true);
     setResult(null);
     setError(null);
-    setCurrentStep(0);
     setSelectedFileName(file.name);
+    start();
 
     const formData = new FormData();
     formData.append("file", file);
-
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => (prev >= scanSteps.length - 1 ? prev : prev + 1));
-    }, 700);
 
     try {
       const response = await fetch("/api/deepfake", {
@@ -75,7 +72,7 @@ export default function DeepfakePage() {
       const message = err instanceof Error ? err.message : "Inference failed.";
       setError(message);
     } finally {
-      clearInterval(interval);
+      finish();
       setScanning(false);
     }
   };

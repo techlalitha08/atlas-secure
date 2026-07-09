@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Globe,
@@ -21,8 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import { TrustGauge } from "@/components/atlas/trust-gauge";
 import { ScanProgress } from "@/components/atlas/scan-progress";
 import { useTrust } from "@/lib/trust-context";
-import type { AgentAnalysis, RiskLevel } from "@/lib/agents/types";
-import { cn, getTrustColor } from "@/lib/utils";
+import type { AgentAnalysis } from "@/lib/agents/types";
+import { useScanSteps } from "@/lib/hooks/useScanSteps";
+import { cn, getTrustColor, riskLevelToBadgeVariant, riskLevelToLabel } from "@/lib/utils";
 
 const scanSteps = [
   "Resolving DNS records",
@@ -48,33 +49,13 @@ function getSslStatus(result: AgentAnalysis): string {
   return result.metadata.sslValid ? `Valid · Grade ${grade}` : "Invalid";
 }
 
-function riskBadgeVariant(level: RiskLevel): "success" | "warning" | "danger" {
-  if (level === "safe") return "success";
-  if (level === "caution") return "warning";
-  return "danger";
-}
-
-function riskLabel(level: RiskLevel): string {
-  switch (level) {
-    case "safe":
-      return "Low Risk";
-    case "caution":
-      return "Moderate Risk";
-    case "danger":
-      return "High Risk";
-    case "critical":
-      return "Critical Risk";
-  }
-}
-
 export default function WebsiteScannerPage() {
   const { recordWebsiteScan, trust } = useTrust();
   const [url, setUrl] = useState("");
   const [scanning, setScanning] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<AgentAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { currentStep, start, finish } = useScanSteps(scanSteps.length, { intervalMs: 500 });
 
   const startScan = async () => {
     if (!url.trim() || scanning) return;
@@ -82,11 +63,7 @@ export default function WebsiteScannerPage() {
     setScanning(true);
     setResult(null);
     setError(null);
-    setCurrentStep(0);
-
-    intervalRef.current = setInterval(() => {
-      setCurrentStep((prev) => Math.min(prev + 1, scanSteps.length - 1));
-    }, 500);
+    start();
 
     try {
       const response = await fetch("/api/atlas-secure", {
@@ -109,8 +86,7 @@ export default function WebsiteScannerPage() {
       }
 
       const analysis = data.analysis;
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setCurrentStep(scanSteps.length);
+      finish();
       await new Promise((r) => setTimeout(r, 400));
       setResult(analysis);
       recordWebsiteScan(analysis);
@@ -118,7 +94,7 @@ export default function WebsiteScannerPage() {
       const message = err instanceof Error ? err.message : "Atlas could not analyze that website right now.";
       setError(message);
     } finally {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      finish();
       setScanning(false);
     }
   };
@@ -224,8 +200,8 @@ export default function WebsiteScannerPage() {
                       <p className="text-xs text-zinc-500 uppercase tracking-wider">Analyzed URL</p>
                       <p className="text-lg font-mono text-white break-all">{result.target}</p>
                       <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start pt-1">
-                        <Badge variant={riskBadgeVariant(result.riskLevel)}>
-                          {riskLabel(result.riskLevel)}
+                        <Badge variant={riskLevelToBadgeVariant(result.riskLevel)}>
+                          {riskLevelToLabel(result.riskLevel)}
                         </Badge>
                         <Badge variant="info">{result.confidence}% confidence</Badge>
                         <Badge variant="outline">{result.agentName}</Badge>
@@ -263,7 +239,7 @@ export default function WebsiteScannerPage() {
                   },
                   {
                     label: "Risk Level",
-                    value: riskLabel(result.riskLevel),
+                    value: riskLevelToLabel(result.riskLevel),
                     icon: AlertTriangle,
                     color:
                       result.riskLevel === "safe"

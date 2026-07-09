@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrustGauge } from "@/components/atlas/trust-gauge";
 import { useTrust } from "@/lib/trust-context";
 import type { AgentAnalysis } from "@/lib/agents/types";
-import { cn, getTrustColor } from "@/lib/utils";
+import { cn, getTrustColor, riskLevelToBadgeVariant, riskLevelToTextColor } from "@/lib/utils";
 
 interface QRResult {
   destinationUrl: string;
@@ -142,7 +142,7 @@ export default function QRScannerPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="flex flex-col items-center py-6">
                 <TrustGauge score={result.trustScore} size="md" label="Trust Score" />
-                <Badge variant={result.riskLevel === "safe" ? "success" : result.riskLevel === "caution" ? "warning" : "danger"} className="mt-4">
+                <Badge variant={riskLevelToBadgeVariant(result.riskLevel)} className="mt-4">
                   {result.riskLevel === "safe" ? "Safe to visit" : result.riskLevel === "caution" ? "Review before visiting" : "High risk"}
                 </Badge>
                 <p className="text-xs text-zinc-500 mt-3">Overall trust updated: {trust.overall}</p>
@@ -156,7 +156,7 @@ export default function QRScannerPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-zinc-400">Risk Level</span>
-                    <span className={cn("font-medium", result.riskLevel === "safe" ? "text-emerald-400" : result.riskLevel === "caution" ? "text-amber-400" : "text-red-400")}>{result.riskLevel}</span>
+                    <span className={cn("font-medium", riskLevelToTextColor(result.riskLevel))}>{result.riskLevel}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-zinc-400">Confidence</span>

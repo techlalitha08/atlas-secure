@@ -1,8 +1,37 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { RiskLevel } from "./agents/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+/** Maps a risk level to the matching {@link Badge} variant. */
+export function riskLevelToBadgeVariant(level: RiskLevel): "success" | "warning" | "danger" {
+  if (level === "safe") return "success";
+  if (level === "caution") return "warning";
+  return "danger";
+}
+
+/** Human-readable label for a risk level. */
+export function riskLevelToLabel(level: RiskLevel): string {
+  switch (level) {
+    case "safe":
+      return "Low Risk";
+    case "caution":
+      return "Moderate Risk";
+    case "danger":
+      return "High Risk";
+    case "critical":
+      return "Critical Risk";
+  }
+}
+
+/** Tailwind text color class for a risk level. */
+export function riskLevelToTextColor(level: RiskLevel): string {
+  if (level === "safe") return "text-emerald-400";
+  if (level === "caution") return "text-amber-400";
+  return "text-red-400";
 }
 
 export function getTrustColor(score: number): string {

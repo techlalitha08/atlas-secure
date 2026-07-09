@@ -19,7 +19,7 @@ import {
   threatTimeline, aiActivity, securityInsights,
 } from "@/data/mock-data";
 import { useTrust } from "@/lib/trust-context";
-import { cn, getTrustColor, getSeverityColor } from "@/lib/utils";
+import { cn, getTrustColor, getSeverityColor, riskLevelToBadgeVariant } from "@/lib/utils";
 import Link from "next/link";
 
 const baseTrustTrend = [
@@ -112,7 +112,7 @@ export default function DashboardPage() {
               <CardTitle>Overall Trust Score</CardTitle>
               <p className="text-xs text-zinc-500 mt-1">{trust.verdict}</p>
               <div className="mt-2 flex items-center gap-2">
-                <Badge variant={trust.riskLevel === "safe" ? "success" : trust.riskLevel === "caution" ? "warning" : "danger"}>
+                <Badge variant={riskLevelToBadgeVariant(trust.riskLevel)}>
                   {trust.riskLevel}
                 </Badge>
                 <Badge variant="info">Website {websiteTrust}</Badge>

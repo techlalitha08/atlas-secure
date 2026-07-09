@@ -1,24 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeQrCodeImage } from "@/lib/qrAgent";
+import { getUploadedFile, jsonError } from "@/lib/api/http";
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file");
-
-    if (!file || typeof file === "string") {
+    const file = await getUploadedFile(request);
+    if (!file) {
       return NextResponse.json({ error: "Please upload an image containing a QR code." }, { status: 400 });
     }
 
-    const result = await analyzeQrCodeImage(file as File);
+    const result = await analyzeQrCodeImage(file);
     return NextResponse.json({ ok: true, result });
   } catch (error) {
-    console.error("QR analysis failed", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "QR analysis failed.",
-      },
-      { status: 500 }
-    );
+    return jsonError(error, "QR analysis failed.");
   }
 }

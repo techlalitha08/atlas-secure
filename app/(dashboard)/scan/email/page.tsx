@@ -12,7 +12,8 @@ import { TrustGauge } from "@/components/atlas/trust-gauge";
 import { ScanProgress } from "@/components/atlas/scan-progress";
 import { analyzeEmail } from "@/lib/emailAgent";
 import type { AgentAnalysis } from "@/lib/agents/types";
-import { cn } from "@/lib/utils";
+import { useScanSteps } from "@/lib/hooks/useScanSteps";
+import { cn, riskLevelToBadgeVariant } from "@/lib/utils";
 
 const scanSteps = [
   "Parsing email headers",
@@ -26,29 +27,21 @@ const scanSteps = [
 export default function EmailScannerPage() {
   const [email, setEmail] = useState("");
   const [scanning, setScanning] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<AgentAnalysis | null>(null);
+  const { currentStep, start, finish } = useScanSteps(scanSteps.length, { intervalMs: 500 });
 
   const startScan = async () => {
     if (!email.trim()) return;
     setScanning(true);
     setResult(null);
-    setCurrentStep(0);
-
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      setCurrentStep(step);
-      if (step >= scanSteps.length) clearInterval(interval);
-    }, 500);
+    start();
 
     try {
       const analysis = await analyzeEmail(email);
       setResult(analysis);
     } finally {
-      clearInterval(interval);
+      finish();
       setScanning(false);
-      setCurrentStep(scanSteps.length);
     }
   };
 
@@ -92,10 +85,7 @@ export default function EmailScannerPage() {
               <div className="grid md:grid-cols-3 gap-6">
                 <Card className="md:col-span-1 flex flex-col items-center py-6">
                   <TrustGauge score={result.trustScore} size="lg" label="Trust Score" />
-                  <Badge
-                    variant={result.riskLevel === "safe" ? "success" : result.riskLevel === "caution" ? "warning" : "danger"}
-                    className="mt-4"
-                  >
+                  <Badge variant={riskLevelToBadgeVariant(result.riskLevel)} className="mt-4">
                     {result.riskLevel === "safe" ? "Legitimate" : result.riskLevel === "caution" ? "Suspicious" : "Phishing Detected"}
                   </Badge>
                 </Card>
