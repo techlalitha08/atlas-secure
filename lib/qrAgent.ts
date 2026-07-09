@@ -24,7 +24,9 @@ export async function analyzeQrCodeImage(file: File): Promise<QRAnalysisResult> 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  const { data, info } = await sharp(buffer)
+  // Cap decoded resolution (~24 MP) to prevent decompression-bomb images from
+  // expanding into a huge raw RGBA buffer in memory.
+  const { data, info } = await sharp(buffer, { limitInputPixels: 24_000_000 })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });

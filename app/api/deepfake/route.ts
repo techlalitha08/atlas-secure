@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runDeepfakeInference } from "@/lib/deepfake/inference";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_UPLOAD_BYTES,
+  isUploadValidationError,
+  validateUploadedFile,
+} from "@/lib/upload-validation";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file");
+    const validation = validateUploadedFile(formData.get("file"), "image file", {
+      maxBytes: MAX_IMAGE_UPLOAD_BYTES,
+      allowedTypes: ALLOWED_IMAGE_TYPES,
+    });
 
-    if (!file || typeof file === "string") {
-      return NextResponse.json({ error: "Please upload an image file." }, { status: 400 });
+    if (isUploadValidationError(validation)) {
+      return NextResponse.json({ error: validation.message }, { status: validation.status });
     }
 
+    const file = validation.file;
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
