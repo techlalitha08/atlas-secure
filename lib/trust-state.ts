@@ -88,7 +88,8 @@ export function loadPersistedTrust(): PersistedTrustState | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     return raw ? (JSON.parse(raw) as PersistedTrustState) : null;
-  } catch {
+  } catch (error) {
+    console.warn("Failed to load persisted trust state; starting fresh.", error);
     return null;
   }
 }
@@ -97,8 +98,8 @@ export function persistTrust(state: PersistedTrustState): void {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // ignore quota errors
+  } catch (error) {
+    console.warn("Failed to persist trust state (storage unavailable or quota exceeded).", error);
   }
 }
 

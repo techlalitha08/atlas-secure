@@ -32,7 +32,8 @@ export default function ChatPage() {
     try {
       const saved = window.sessionStorage.getItem("atlas-chat-messages");
       return saved ? (JSON.parse(saved) as Message[]) : [];
-    } catch {
+    } catch (error) {
+      console.warn("Failed to restore saved chat messages; starting a new conversation.", error);
       return [];
     }
   });
@@ -51,8 +52,11 @@ export default function ChatPage() {
   }, [messages, isTyping]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+    try {
       window.sessionStorage.setItem("atlas-chat-messages", JSON.stringify(messages));
+    } catch (error) {
+      console.warn("Failed to persist chat messages (storage unavailable or quota exceeded).", error);
     }
   }, [messages]);
 

@@ -50,8 +50,12 @@ export async function runDeepfakeInference(imageBuffer: Buffer): Promise<Deepfak
   });
 
   const first = Array.isArray(output) ? output[0] : output;
-  const label = typeof first?.label === "string" ? first.label.toLowerCase() : "";
-  const score = typeof first?.score === "number" ? first.score : 0;
+  if (!first || typeof first.label !== "string" || typeof first.score !== "number") {
+    throw new Error("The deepfake model returned no usable classification for this image.");
+  }
+
+  const label = first.label.toLowerCase();
+  const score = first.score;
 
   const fakeProbability = label.includes("fake") || label.includes("manip") || label.includes("synth")
     ? normalizeProbability(score)
